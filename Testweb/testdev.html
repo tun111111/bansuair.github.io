@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Air Conditioner Controller</title>
+    <link rel="stylesheet" href="CSS File/index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <base target="_top" />
+    <style>
+      /* สีปุ่ม logout */
+      .sidebar ul li:last-child a {
+        color: red;
+      }
+
+      #content-section [name="date"],
+      #content-section [name="UserCredentials"] {
+        display: none;
+      }
+      #content-section .home-container {
+        text-align: center;
+        padding: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        margin: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      #content-section .home-container h1 {
+        color: #333;
+      }
+      #sidebarList {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        float: right; /* หรือใช้ position: absolute; ก็ได้ */
+        width: 20%; /* ปรับความกว้างตามต้องการ */
+      }
+      /* เพิ่มสไตล์สำหรับรายการใน sidebarList ตามต้องการ */
+      #sidebarList li {
+        padding: 10px;
+        background-color: #f4f4f4;
+        border-bottom: 1px solid #ddd;
+        margin-top: 5px; /* เพิ่มระยะห่างด้านบน */
+        margin-bottom: 5px; /* เพิ่มระยะห่างด้านล่าง */
+      }
+    </style>
+  </head>
+
+  <body>
+    <input type="checkbox" id="check" />
+    <label for="check">
+      <i class="fas fa-bars" id="btn"></i>
+      <i class="fas fa-times" id="cancel"></i>
+    </label>
+    <div class="sidebar">
+      <header onclick="refreshPage()">Air Control</header>
+      <ul>
+        <li>
+          <a href="#" onclick="createNewSheet()"
+            ><i class="fas fa-plus"></i>Add a Sheet page</a
+          >
+        </li>
+        <li>
+          <a href="#" onclick="showConfigCalendar()"
+            ><i class="fa fa-calendar"></i>Config Calendar</a
+          >
+        </li>
+        <li>
+          <a href="#" onclick="showConfigsetting()"
+            ><i class="fas fa-sliders-h"></i>setting On/Off</a
+          >
+        </li>
+        <li>
+          <a href="login.html"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        </li>
+      </ul>
+    </div>
+    <section id="content-section">
+      <!-- Initially show the Home content on page load -->
+      <div class="home-container">
+        <h1>Smart Air Conditioner Controller</h1>
+      </div>
+    </section>
+    <script>
+      var idsheet =
+        "AKfycbzsDAChT28ZIot4_etxpKLFxGrTqV_Q6kLY7wrfmCotI_c6VXtw1s5N8QYw_eKOjyuA"; // กำหนดค่า idsheet ที่นี่
+      function refreshPage() {
+        location.reload(true);
+      }
+
+      function createNewSheet() {
+        var sheetname = prompt("กรุณาใส่ชื่อ sheet ที่ต้องการ:");
+        if (!sheetname) {
+          return;
+        }
+        var url =
+          "https://script.google.com/macros/s/" +
+          idsheet +
+          "/exec?action=createSheet&sheetname=" +
+          encodeURIComponent(sheetname);
+
+        fetch(url)
+          .then((response) => response.text())
+          .then((result) => {
+            console.log("Fetch Response:", result);
+            loadSheetButtons();
+            alert(result);
+            if (result.trim().toLowerCase() === "successful") {
+              console.log("Redirecting to index.html");
+              window.location.href = "index.html";
+            }
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+      function deleteRow(index) {
+        var deleteUrl =
+          "https://script.google.com/macros/s/" +
+          idsheet +
+          "/exec?rowToDelete=" +
+          (index + 1);
+        var deleteXhr = new XMLHttpRequest();
+        deleteXhr.open("GET", deleteUrl, true);
+        deleteXhr.onreadystatechange = function () {
+          if (deleteXhr.readyState == 4 && deleteXhr.status == 200) {
+            loadTableData();
+          }
+        };
+
+        deleteXhr.send();
+      }
+      function deleteAllData() {
+        var deleteAllUrl =
+          "https://script.google.com/macros/s/" + idsheet + "/exec?deleteAll";
+
+        var deleteAllXhr = new XMLHttpRequest();
+        deleteAllXhr.open("GET", deleteAllUrl, true);
+
+        deleteAllXhr.onreadystatechange = function () {
+          if (deleteAllXhr.readyState == 4 && deleteAllXhr.status == 200) {
+            loadTableData();
+          }
+        };
+
+        deleteAllXhr.send();
+      }
+      function confirmDeleteAll() {
+        var isConfirmed = window.confirm(
+          "ต้องการที่จะลบวันเดือนปีทั้งหมดในตารางหรือไม่?"
+        );
+
+        if (isConfirmed) {
+          deleteAllData();
+        } else {
+        }
+      }
+      function loadTableData() {
+        var xhr = new XMLHttpRequest();
+        var url = "https://script.google.com/macros/s/" + idsheet + "/exec";
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+            var responseData = JSON.parse(xhr.responseText);
+            var statusTableBody = document.getElementById("status-table-body");
+            if (statusTableBody) {
+              while (statusTableBody.firstChild) {
+                statusTableBody.removeChild(statusTableBody.firstChild);
+              }
+              responseData.data.slice(1).forEach(function (item, index) {
+                var row = statusTableBody.insertRow();
+                var cellStatus = row.insertCell(0);
+
+                var dateValue = item.Status;
+                var formattedDate = dateValue.replace(
+                  /(\d{4})(\d{2})(\d{2})/,
+                  "$3/$2/$1"
+                );
+                cellStatus.textContent = formattedDate;
+
+                var cellAction = row.insertCell(1);
+                var deleteLink = document.createElement("a");
+                deleteLink.href = "javascript:void(0);";
+                deleteLink.textContent = "Delete";
+                deleteLink.onclick = function () {
+                  deleteRow(index + 1);
+                };
+                cellAction.appendChild(deleteLink);
+              });
+            }
+          }
+        };
+        xhr.send();
+      }
+      function submitData() {
+        var dateInput = document.getElementById("dateInput").value;
+        var formattedDate = dateInput.split("-").join("");
+        var submitUrl =
+          "https://script.google.com/macros/s/" +
+          idsheet +
+          "/exec?date=" +
+          formattedDate;
+        var submitXhr = new XMLHttpRequest();
+        submitXhr.open("GET", submitUrl, true);
+        submitXhr.onreadystatechange = function () {
+          if (submitXhr.readyState == 4 && submitXhr.status == 200) {
+            loadTableData();
+          }
+        };
+        submitXhr.send();
+      }
+      window.onload = loadTableData;
+
+      function showConfigCalendar() {
+        document.getElementById("content-section").innerHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="CSS File/showConfigCalendar.css" />
+    <title>เพิ่มวันหยุดบริษัท</title>
+    </head>
+    <body>
+    <div id="wrapper">
+        <header>
+            <h1>Smart Air Conditioner Controller</h1>
+        </header>
+        <main>
+            <div class="input-section">
+                <h2 for="dateInput">กรุณาเลือกวันที่:</h2>
+                <input type="date" id="dateInput" name="dateInput" lang="th" pattern="\d{4}-\d{2}-\d{2}"
+                    title="กรุณาใส่วันที่ในรูปแบบ วว/ดด/ปปปป">
+                <button onclick="submitData()">Submit</button>
+            </div>
+        <h2>ตารางวันหยุดบริษัท</h2>
+            <div class="table-section">
+                <center>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><center>วันเดือนปี</center></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="status-table-body"></tbody>
+                    </table>
+                    <button onclick="confirmDeleteAll()">ลบวันเดือนปีทั้งหมดในตาราง</button>
+            </div>
+        </main>
+        </center>
+        </body>
+        </html>`;
+        loadTableData();
+      }
+      function toggleSidebar() {
+        var sidebar = document.querySelector("aside");
+        sidebar.style.left =
+          sidebar.style.left === "0px" || sidebar.style.left === ""
+            ? "-270px"
+            : "0px";
+      }
+      function deleteSheet(sheet) {
+        var confirmDelete = confirm(
+          "คุณต้องการลบ Sheet: " + sheet + " ใช่หรือไม่?"
+        );
+        if (confirmDelete) {
+          fetch(
+            "https://script.google.com/macros/s/" +
+              idsheet +
+              "/exec?action=deleteSheet&sheetname=" +
+              sheet
+          )
+            .then((response) => {
+              if (response.ok) {
+                return response.text();
+              }
+              throw new Error("Network response was not ok.");
+            })
+            .then((data) => {
+              loadSheetButtons();
+              createNewSheet();
+            })
+            .catch((error) => {
+              console.error("Error during sheet deletion:", error);
+            });
+        }
+      }
+      function loadSheetButtons() {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            var sheetData = xhr.responseText.split(",");
+            var sidebarListElement = document.getElementById("sidebarList");
+            // Clear existing content in sidebarListElement
+            sidebarListElement.innerHTML = "";
+            sheetData.forEach(function (sheet) {
+              var listItem = document.createElement("li");
+              var sheetButton = document.createElement("button");
+              sheetButton.textContent = sheet;
+              sheetButton.addEventListener("click", function () {
+                alert("คุณคลิกที่ Sheet: " + sheet);
+                // Handle sheet button click here
+              });
+              var deleteButton = document.createElement("button");
+              deleteButton.textContent = "ลบ";
+              deleteButton.className = "deleteButton";
+              deleteButton.addEventListener("click", function () {
+                deleteSheet(sheet);
+              });
+
+              listItem.appendChild(sheetButton);
+              listItem.appendChild(deleteButton);
+
+              sidebarListElement.appendChild(listItem);
+            });
+          }
+        };
+        xhr.open(
+          "GET",
+          "https://script.google.com/macros/s/" +
+            idsheet +
+            "/exec?action=getSheetList",
+          true
+        );
+        xhr.send();
+      }
+      document.addEventListener("DOMContentLoaded", loadSheetButtons);
+      function toggleSidebar() {
+        var sidebar = document.querySelector("aside");
+        sidebar.style.left =
+          sidebar.style.left === "0px" || sidebar.style.left === ""
+            ? "-270px"
+            : "0px";
+      }
+      function deleteSheet(sheet) {
+        var confirmDelete = confirm(
+          "คุณต้องการลบ Sheet: " + sheet + " ใช่หรือไม่?"
+        );
+        if (confirmDelete) {
+          fetch(
+            "https://script.google.com/macros/s/" +
+              idsheet +
+              "/exec?action=deleteSheet&sheetname=" +
+              sheet
+          )
+            .then((response) => {
+              if (response.ok) {
+                return response.text();
+              }
+              throw new Error("Network response was not ok.");
+            })
+            .then((data) => {
+              loadSheetButtons();
+            })
+            .catch((error) => {
+              console.error("Error during sheet deletion:", error);
+            });
+        }
+      }
+      function showSheetName(sheetName) {
+        document.getElementById("selectedSheet").textContent =
+          "คุณเลือก Sheet Name : " + sheetName;
+      }
+      function loadSheetButtons() {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            var sheetData = xhr.responseText.split(",");
+            var sidebarListElement = document.getElementById("sidebarList");
+            // Clear existing content in sidebarListElement
+            sidebarListElement.innerHTML = "";
+            sheetData.forEach(function (sheet) {
+              var listItem = document.createElement("li");
+              var sheetButton = document.createElement("button");
+              sheetButton.textContent = sheet;
+              sheetButton.addEventListener("click", function () {
+                alert("คุณคลิกที่ Sheet: " + sheet);
+                // Handle sheet button click here
+              });
+              var deleteButton = document.createElement("button");
+              deleteButton.textContent = "ลบ";
+              deleteButton.className = "deleteButton";
+              deleteButton.addEventListener("click", function () {
+                deleteSheet(sheet);
+              });
+
+              listItem.appendChild(sheetButton);
+              listItem.appendChild(deleteButton);
+
+              sidebarListElement.appendChild(listItem);
+            });
+          }
+        };
+        xhr.open(
+          "GET",
+          "https://script.google.com/macros/s/" +
+            idsheet +
+            "/exec?action=getSheetList",
+          true
+        );
+        xhr.send();
+      }
+      document.addEventListener("DOMContentLoaded", loadSheetButtons);
+      var sheetName;
+      function showConfigsetting() {
+        fetchSheetDataAndDisplay();
+        document.getElementById("content-section").innerHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <link rel="stylesheet" href="CSS File/showConfigsetting.css" />
+            <title>Smart Air Conditioner Controller</title>
+        </head>
+        <body>
+            <main>
+                <form id="airConditionerForm">
+                    <h2>Smart Air Conditioner Controller</h2>
+                    <input type="radio" id="auto" name="operationMode" value="0" />
+                    <label for="auto">Auto</label><br />
+                    <input type="radio" id="manual" name="operationMode" value="1" />
+                    <label for="manual">Manual</label><br />
+                    <label id="status" class="switch switch-left-right">
+                        <input
+                            type="checkbox"
+                            name="save_data_dowry"
+                            value="1"
+                            checked=""
+                            class="switch-input"
+                        />
+                        <span data-on="เปิด" data-off="ปิด" class="switch-label"></span>
+                        <span class="switch-handle"></span>
+                    </label>
+                    <p id="timeInputs"></p>
+                    <input type="checkbox" id="Monday" name="day[]" value="Monday" />
+                    <label for="Monday">วันจันทร์</label><br />
+                    <input type="checkbox" id="Tuesday" name="day[]" value="Tuesday" />
+                    <label for="Tuesday">วันอังคาร</label><br />
+                    <input type="checkbox" id="Wednesday" name="day[]" value="Wednesday" />
+                    <label for="Wednesday">วันพุธ</label><br />
+                    <input type="checkbox" id="Thursday" name="day[]" value="Thursday" />
+                    <label for="Thursday">วันพฤหัสบดี</label><br />
+                    <input type="checkbox" id="Friday" name="day[]" value="Friday" />
+                    <label for="Friday">วันศุกร์</label><br />
+                    <input type="checkbox" id="Saturday" name="day[]" value="Saturday" />
+                    <label for="Saturday">วันเสาร์</label><br />
+                    <input type="checkbox" id="Sunday" name="day[]" value="Sunday" />
+                    <label for="Sunday">วันอาทิตย์</label><br />
+                    <button id="submitForm">Submit</button>
+                </form>
+                <div id="msg"></div>
+            </main>
+        <ul id="sidebarList">
+          <!-- Sheet buttons will be appended here -->
+        </ul>
+        </body>
+    </html>
+  `;
+        document
+          .getElementById("submitForm")
+          .addEventListener("click", function (event) {
+            event.preventDefault(); // Prevent form submission
+            var operationMode = document.querySelector(
+              'input[name="operationMode"]:checked'
+            ).value;
+            var isChecked = document.querySelector(
+              '#status input[type="checkbox"]'
+            ).checked;
+            var status = isChecked ? "เปิด" : "ปิด";
+            var openTime = document.getElementById("openTime").value;
+            var closeTime = document.getElementById("closeTime").value;
+            var restartTime = document.getElementById("restartTime").value;
+            var days = [];
+
+            document
+              .querySelectorAll('input[name="day[]"]')
+              .forEach(function (checkbox) {
+                days.push(checkbox.checked ? "1" : "0");
+              });
+
+            if (status.trim() === "") {
+              alert("Please enter status.");
+              return;
+            }
+
+            var userPreference;
+            if (confirm("ต้องการที่จะบันทึกข้อมูลหรือไม่ ?")) {
+              userPreference = "บันทึกข้อมูลทั้งหมดแล้ว";
+            } else {
+              userPreference = "ยกเลิกการส่งข้อมูลแล้ว !";
+              return;
+            }
+
+            var formData = new FormData();
+            formData.append("operation", operationMode);
+            formData.append("status", status);
+            formData.append("open_time", openTime);
+            formData.append("close_time", closeTime);
+            formData.append("restart_time", restartTime);
+            formData.append("day", days.join(","));
+
+            fetch("https://script.google.com/macros/s/" + idsheet + "/exec", {
+              method: "POST",
+              body: formData,
+            })
+              .then((response) => response.text())
+              .then((data) => {
+                document.getElementById("msg").innerHTML = userPreference;
+                fetchSheetDataAndDisplay();
+              })
+              .catch((error) => {
+                console.error("Error sending data:", error);
+                document.getElementById("msg").innerHTML =
+                  "An error occurred while saving data.";
+              });
+          });
+      }
+
+      function fetchSheetDataAndDisplay() {
+        fetch(
+          "https://script.google.com/macros/s/" +
+            idsheet +
+            "/exec?action=getDataFromSheet",
+          {
+            method: "GET",
+          }
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.days) {
+              if (data.operation === "0") {
+                document.getElementById("auto").checked = true;
+                document.getElementById("manual").checked = false;
+              } else if (data.operation === "1") {
+                document.getElementById("auto").checked = false;
+                document.getElementById("manual").checked = true;
+              }
+
+              // Clear existing time inputs before creating new ones
+              document.getElementById("timeInputs").innerHTML = "";
+
+              if (data.openTime) {
+                createDateTimeInput("openTime", data.openTime);
+              }
+              if (data.closeTime) {
+                createDateTimeInput("closeTime", data.closeTime);
+              }
+              if (data.restartTime) {
+                createDateTimeInput("restartTime", data.restartTime);
+              }
+
+              var days = [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ];
+              var Days = data.days;
+              days.forEach(function (day, index) {
+                var checkbox = document.querySelector(
+                  'input[name="day[]"][value="' + day + '"]'
+                );
+                checkbox.checked = Days[index] === "1";
+              });
+
+              var status = data.status;
+              var checkbox = document.querySelector(
+                '#status input[type="checkbox"]'
+              );
+              checkbox.checked = status === "เปิด";
+            }
+          })
+          .catch((error) => console.error("Error fetching data:", error));
+      }
+
+      function createDateTimeInput(id, time) {
+        const input = document.createElement("input");
+        input.type = "time";
+        input.value = time;
+        input.id = id;
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        label.textContent = id + ": ";
+        const container = document.getElementById("timeInputs");
+        container.appendChild(label);
+        container.appendChild(input);
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        // showConfigsetting();
+        fetchSheetDataAndDisplay(); // Fetch data after the form is displayed
+        showSheetName(sheetName);
+      });
+    </script>
+  </body>
+</html>

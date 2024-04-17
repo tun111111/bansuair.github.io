@@ -1,0 +1,212 @@
+var SS = SpreadsheetApp.openById(
+  "14rEh9RDQq0D4dkZ6XZXRtnpJ70X_aHxSbsMItNWffXI"
+);
+var sheet_workend = SS.getSheetByName("date");
+var sheet_login = SS.getSheetByName("Login");
+
+function doPost(e) {
+  var parsedData;
+  try {
+    parsedData = JSON.parse(e.postData.contents);
+  } catch (f) {
+    return ContentService.createTextOutput(
+      "Error in parsing request body: " + f.message
+    );
+  }
+  if (parsedData !== undefined) {
+    // Common items first
+    // data format: 0 = display value(literal), 1 = object value
+    var flag = parsedData.format;
+    if (flag === undefined) {
+      flag = 0;
+    }
+
+    switch (parsedData.command) {
+      case "status":
+        //var nextFreeRow = tmp.getLastRow() + 1;
+        //var dataArr = parsedData.values.split(",");
+        //tmp.appendRow(dataArr);
+        var tmp = SS.getSheetByName(parsedData.sheet_name);
+        tmp.getRange("E2").setValue(parsedData.values);
+        str = "Success update status.";
+        SpreadsheetApp.flush();
+        break;
+      case "start":
+        //var nextFreeRow = tmp.getLastRow() + 1;
+        //var dataArr = parsedData.values.split(",");
+        //tmp.appendRow(dataArr);
+        var tmp = SS.getSheetByName(parsedData.sheet_name);
+        var date = Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd HH:mm");
+        tmp.getRange("F2").setValue(date);
+        str = "Success update start.";
+        SpreadsheetApp.flush();
+        break;
+      case "reboot":
+        //var nextFreeRow = tmp.getLastRow() + 1;
+        //var dataArr = parsedData.values.split(",");
+        //tmp.appendRow(dataArr);
+        var tmp = SS.getSheetByName(parsedData.sheet_name);
+        var date = Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd HH:mm");
+        tmp.getRange("G2").setValue(date);
+        str = "Success update reboot.";
+        SpreadsheetApp.flush();
+        break;
+      case "online":
+        //var nextFreeRow = tmp.getLastRow() + 1;
+        //var dataArr = parsedData.values.split(",");
+        //tmp.appendRow(dataArr);
+        var tmp = SS.getSheetByName(parsedData.sheet_name);
+        var date = Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd HH:mm");
+        tmp.getRange("H2").setValue(date);
+        str = "Success update online.";
+        SpreadsheetApp.flush();
+        break;
+    }
+    return ContentService.createTextOutput(str);
+  } // endif (parsedData !== undefined)
+  else {
+    return ContentService.createTextOutput(
+      "Error! Request body empty or in incorrect format."
+    );
+  }
+}
+
+function doGet(e) {
+  var workend = e.parameter.workend;
+  var device = e.parameter.device;
+
+  if (device !== undefined) {
+    var sheet_device = SS.getSheetByName(device);
+    var timeON = sheet_device.getRange("A2").getValue();
+    var timeOFF = sheet_device.getRange("A3").getValue();
+    var reboot = sheet_device.getRange("B2").getValue();
+    var week = sheet_device.getRange("C2:C8").getValues();
+    var mode = sheet_device.getRange("D2").getValue();
+    var status = sheet_device.getRange("E2").getValue();
+    var statusReboot = sheet_device.getRange("G2").getValue();
+    var delay = sheet_device.getRange("I2").getValue();
+    var json = {
+      ON: timeON,
+      OFF: timeOFF,
+      REBOOT: reboot,
+      STATUS: status,
+      WEEK: week,
+      MODE: mode,
+      SREBOOT: statusReboot,
+      DELAY: delay,
+    };
+    return ContentService.createTextOutput(JSON.stringify(json)).setMimeType(
+      ContentService.MimeType.JSON
+    );
+  }
+
+  if (workend !== undefined) {
+    var workend = sheet_workend.getRange("B2:B20").getValues();
+    var json = {
+      WORKEND: workend,
+    };
+    return ContentService.createTextOutput(JSON.stringify(json)).setMimeType(
+      ContentService.MimeType.JSON
+    );
+  }
+}
+
+function setOnOffDevice1() {
+  var sheet_de = SS.getSheetByName("Device1");
+  if (sheet_de.getRange("D2").getValue() === 1) {
+    if (sheet_de.getRange("E2").getValue() === "OFF") {
+      sheet_de.getRange("E2").setValue("ON");
+    } else {
+      sheet_de.getRange("E2").setValue("OFF");
+    }
+  }
+}
+
+function setOnOffDevice2() {
+  var sheet_de = SS.getSheetByName("Device2");
+  if (sheet_de.getRange("D2").getValue() === 1) {
+    if (sheet_de.getRange("E2").getValue() === "OFF") {
+      sheet_de.getRange("E2").setValue("ON");
+    } else {
+      sheet_de.getRange("E2").setValue("OFF");
+    }
+  }
+}
+
+/*function getScriptUrl() {
+ var url = ScriptApp.getService().getUrl();
+ return url;
+}
+  
+  if (!e.parameter.page)
+    return HtmlService.createTemplateFromFile('index').evaluate();
+  else
+    return HtmlService.createTemplateFromFile(e.parameter['page']).evaluate();
+
+  var range = sheet.getRange('A1');
+  var retval = range.setValue(val).getValue();
+  var now = Utilities.formatDate(new Date(), "EST", "yyyy-MM-dd'T'hh:mm a'Z'").slice(11,19);
+  sheet.getRange('B1').setValue(now);
+  sheet.getRange('C1').setValue('0');
+  
+  if (retval == e.parameter.value)
+    return ContentService.createTextOutput("Successfully wrote: " + e.parameter.value + "\ninto spreadsheet.");
+  else
+    return ContentService.createTextOutput("Unable to write into spreadsheet.\nCheck authentication and make sure the cursor is not on cell 'A1'." + retval + ' ' + e.parameter.value);
+
+function GetEventsOneWeek(){
+  var Cal = CalendarApp.getCalendarsByName('Test REST API')[0];
+  // Need to create 2 separate Date() objects. Cannot do 'OneWeekFromNow = Nowjs' to 
+  // simply get it's value and use that later without modifying 'Now'
+  // since in JS, an object is automatically passed by reference
+  var Now = new Date();
+  var OneWeekFromNow = new Date();
+  OneWeekFromNow.setDate(Now.getDate() + 7);
+  //Logger.log(Now);
+  //Logger.log(OneWeekFromNow);
+  var events = Cal.getEvents(Now, OneWeekFromNow);
+  //Logger.log(events.length);
+  var str = '\nEvent Title,\tDescription,\tRecurring?,\tAll-day?,\tFirst Reminder (in minutes before event)\n';
+  for (var i = 0; i < events.length; i++){
+    str += events[i].getTitle() + ',\t' + events[i].getDescription() + ',\t' + events[i].isRecurringEvent() +  ',\t' + events[i].isAllDayEvent() + ',\t' + events[i].getPopupReminders()[0];
+    str += '\n';
+  }
+  //Logger.log(str);
+  return str;
+}
+
+Logger.log(sheet.getRange('A1:A5').getValues());
+
+function onOpen(){
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('ESP8266 Logging')
+  .addItem('Clear', 'Clear')
+  .addToUi();
+}
+
+function Clear(){
+  sheet.deleteRows(4, sheet.getLastRow());
+  SS.toast('Chart cleared', 'ESP8266 logging', 5);
+}*/
+//------------test------------------
+/*var str = "";
+var allsheets = SS.getSheets();
+for(var s in allsheets){
+  var sheet = allsheets[s];
+  if (str == ""){
+    str = str+sheet.getName();
+  }else{
+    str = str+","+sheet.getName();
+  }  
+}
+var allSheets = SS.getSheets();
+var sheetNames = allSheets.map(function (sheet) {
+  if (sheet.getName() !== "Login"){
+    return sheet.getName();
+  }
+});
+var filtered = sheetNames.filter(function (el) {
+  return el != null;
+});
+var response = filtered.join(",");
+Logger.log(response)*/

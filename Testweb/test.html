@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Website</title>
+    <style>
+      /* Add your CSS styles here */
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+
+      th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 5px;
+        border: 1px solid #ccc;
+      }
+
+      #edit-form {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>My Data</h1>
+    <table id="data-table">
+      <thead>
+        <tr>
+          <!-- Add table headers based on your Google Sheet columns -->
+        </tr>
+      </thead>
+      <tbody id="data-rows"></tbody>
+    </table>
+
+    <form id="edit-form">
+      <input type="hidden" id="edit-id" name="id" />
+      <input type="hidden" id="edit-row" name="row" />
+      <input type="hidden" id="edit-column" name="column" />
+      <input type="text" id="edit-value" name="value" />
+      <button type="submit">Save</button>
+    </form>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const tableBody = document.querySelector("#data-table tbody");
+        const editForm = document.querySelector("#edit-form");
+
+        fetch(
+          "https://script.google.com/macros/s/AKfycbwxK6oprMhkNA7IycLV87TFt0Xky8QQwFqujzUarbZRoHsaSDSmOW6YRQYXBUWRYFhI3A/exec"
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            data.forEach((row, index) => {
+              const tableRow = document.createElement("tr");
+              tableRow.dataset.id = index;
+
+              // Add a table cell for each column in your Google Sheet
+              row.forEach((cell) => {
+                const tableCell = document.createElement("td");
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = cell;
+                input.addEventListener("change", () => {
+                  const id = tableRow.dataset.id;
+                  const column = Array.from(tableRow.children).indexOf(
+                    tableCell
+                  );
+                  const newValue = input.value;
+
+                  // Create a URL with query parameters
+                  const url = new URL(
+                    "https://script.google.com/macros/s/AKfycbwxK6oprMhkNA7IycLV87TFt0Xky8QQwFqujzUarbZRoHsaSDSmOW6YRQYXBUWRYFhI3A/exec"
+                  );
+                  url.searchParams.append("id", id);
+                  url.searchParams.append("row", id); // Fix parameter name
+                  url.searchParams.append("column", column);
+                  url.searchParams.append("value", newValue);
+
+                  fetch(url)
+                    .then((response) => response.json())
+                    .then((data) => {
+                      if (data.success) {
+                        input.value = newValue;
+                      }
+                    })
+                    .catch((error) =>
+                      console.error("Error editing data:", error)
+                    );
+                });
+
+                tableCell.appendChild(input);
+                tableRow.appendChild(tableCell);
+              });
+
+              tableBody.appendChild(tableRow);
+            });
+
+            editForm.addEventListener("submit", (event) => {
+              event.preventDefault();
+
+              const id = editForm.querySelector("#edit-id").value;
+              const row = editForm.querySelector("#edit-row").value;
+              const column = editForm.querySelector("#edit-column").value;
+              const newValue = editForm.querySelector("[name=value]").value; // Fix reference
+
+              // Create a URL with query parameters
+              const url = new URL(
+                "https://script.google.com/macros/s/AKfycbwxK6oprMhkNA7IycLV87TFt0Xky8QQwFqujzUarbZRoHsaSDSmOW6YRQYXBUWRYFhI3A/exec"
+              );
+              url.searchParams.append("id", id);
+              url.searchParams.append("row", row);
+              url.searchParams.append("column", column);
+              url.searchParams.append("value", newValue);
+
+              fetch(url)
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.success) {
+                    tableBody.children[id].children[column].firstChild.value =
+                      newValue;
+                    editForm.style.display = "none";
+                  }
+                })
+                .catch((error) => console.error("Error editing data:", error));
+            });
+          })
+          .catch((error) => console.error("Error fetching data:", error));
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sheets Data Display</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- เพิ่ม dropdown เพื่อแสดงชื่อของ Sheet ทั้งหมด -->
+    <select id="sheet-selector">
+      <option value="">กรุณาเลือก Sheet</option>
+    </select>
+
+    <div id="data-container">
+      <!-- ข้อมูลจะถูกโชว์ที่นี่ -->
+    </div>
+
+    <script>
+      // ฟังก์ชันสำหรับโหลดชื่อของ Sheet ทั้งหมด
+      function loadSheetNames() {
+        fetch(
+          "https://script.google.com/macros/s/AKfycbwSheOL8TV5eGeWHV-6eFO_rQP452fMU1AljVqmnWvo6gsw1NZHEAUOYJtBZhfvRDWI/exec"
+        )
+          .then((response) => response.json()) // แปลงข้อมูลเป็น JSON
+          .then((sheetNames) => {
+            const sheetSelector = document.getElementById("sheet-selector");
+
+            // เพิ่ม option สำหรับแต่ละชื่อ Sheet
+            sheetNames.forEach((sheetName) => {
+              const option = document.createElement("option");
+              option.value = sheetName;
+              option.textContent = sheetName;
+              sheetSelector.appendChild(option);
+            });
+
+            // เมื่อมีการเลือก Sheet ใน dropdown
+            sheetSelector.addEventListener("change", function () {
+              const selectedSheet = this.value;
+              // เรียกฟังก์ชันสำหรับโหลดข้อมูลของ Sheet ที่เลือก
+              loadSheetData(selectedSheet);
+            });
+          })
+          .catch((error) =>
+            console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error)
+          );
+      }
+
+      // ฟังก์ชันสำหรับโหลดข้อมูลของ Sheet ที่เลือก
+      function loadSheetData(sheetName) {
+        // เช็คว่ามีการเลือก Sheet หรือไม่
+        if (sheetName) {
+          fetch(
+            `https://script.google.com/macros/s/AKfycbyY7JTiT5UrkqS7oc_Vo-_w-gJRVyGKFQMgPIprcaq7ZuVRaMlFKEMVsaU7SdZAdl3O/exec?sheetName=${sheetName}`
+          )
+            .then((response) => response.json()) // แปลงข้อมูลเป็น JSON
+            .then((data) => {
+              const dataContainer = document.getElementById("data-container");
+              // ล้างข้อมูลที่มีอยู่ใน data container ก่อน
+              dataContainer.innerHTML = "";
+
+              // วนลูปเพื่อแสดงข้อมูลในตาราง
+              data.forEach((row) => {
+                const rowElement = document.createElement("div");
+                rowElement.classList.add("data-row");
+
+                // แสดงข้อมูลแต่ละคอลัมน์
+                Object.values(row).forEach((value) => {
+                  const cellElement = document.createElement("div");
+                  cellElement.classList.add("data-cell");
+                  cellElement.textContent = value;
+                  rowElement.appendChild(cellElement);
+                });
+
+                dataContainer.appendChild(rowElement);
+              });
+            })
+            .catch((error) =>
+              console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error)
+            );
+        }
+      }
+
+      // เมื่อเว็บโหลดเสร็จ ให้โหลดชื่อของ Sheet ทั้งหมด
+      window.onload = function () {
+        loadSheetNames();
+      };
+    </script>
+  </body>
+</html>
