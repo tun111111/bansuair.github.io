@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="CSS File/login.css" />
+    <link rel="icon" type="image/x-icon" href="/logo/logo.jfif" />
+  </head>
+  <title>Login Page</title>
+  <body>
+    <form class="login">
+      <h1>Login</h1>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button type="button" onclick="login()">Login</button>
+      <p id="warning-message" style="color: red"></p>
+    </form>
+    <script>
+      let scriptElement = document.createElement("script");
+      scriptElement.type = "text/javascript";
+      scriptElement.src = "login.js";
+      document.body.appendChild(scriptElement);
+      document.addEventListener(
+        "contextmenu",
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+      document.addEventListener("DOMContentLoaded", function () {
+        var form = document.querySelector(".login");
+        var passwordInput = document.getElementById("password");
+        var loggedIn = sessionStorage.getItem("loggedIn");
+        if (loggedIn === "true") {
+          window.location.href = "index.html";
+        }
+        passwordInput.addEventListener("keyup", function (event) {
+          if (event.key === "Enter") {
+            login();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

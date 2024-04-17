@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Air Conditioner Controller</title>
+    <link rel="stylesheet" href="CSS File/index.css" />
+    <link rel="icon" type="image/x-icon" href="/logo/logo.jfif" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <base target="_top" />
+  </head>
+  <body>
+    <input type="checkbox" id="check" />
+    <label for="check">
+      <i class="fas fa-bars" id="btn"></i>
+      <i class="fas fa-times" id="cancel"></i>
+    </label>
+    <div class="sidebar">
+      <header onclick="refreshPage()">Air Control</header>
+      <ul>
+        <li>
+          <a href="#" onclick="createNewSheet()"
+            ><i class="fas fa-plus"></i>Add Device</a
+          >
+        </li>
+        <li>
+          <a href="#" onclick="showConfigCalendar()"
+            ><i class="fa fa-calendar"></i>Add company holidays</a
+          >
+        </li>
+        <li>
+          <a href="#" onclick="showConfigsetting()"
+            ><i class="fas fa-sliders-h"></i>Setting Air conditioner</a
+          >
+        </li>
+        <li>
+          <a href="#" onclick="logout()"
+            ><i class="fas fa-sign-out-alt"></i>Logout</a
+          >
+        </li>
+      </ul>
+    </div>
+    <section id="content-section">
+      <div class="home-container">
+        <h1>Smart Air Conditioner Controller</h1>
+      </div>
+    </section>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var loggedIn = sessionStorage.getItem("loggedIn");
+        if (loggedIn !== "true") {
+          window.location.href = "login.html";
+        }
+      });
+      let scriptElement = document.createElement("script");
+      scriptElement.type = "text/javascript";
+      scriptElement.src = "index.js";
+      document.body.appendChild(scriptElement);
+      document.addEventListener(
+        "contextmenu",
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+    </script>
+  </body>
+</html>
